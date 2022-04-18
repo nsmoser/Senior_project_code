@@ -5,13 +5,14 @@ from time import sleep                                  #sleep between intervals
 def dataParser(recvData):                               #function to parse returned data
     dcv = []                                            #arrays for measurements
     dci = []
+    totalBits = 2**12
     splitData = recvData.split(';')                     #split at all semicolons
     for i in range(len(splitData)):                     #run thru new split-up array
         taggedData = splitData[i].split('?')            #split all indices at ?
         if taggedData[0].find('dcv') != -1:             #if tagged as dc voltage
-            dcv.append(taggedData[1])                   #add data to dc voltage
+            dcv.append(3.3*(float(taggedData[1])/totalBits))#add data to dc voltage
         if taggedData[0].find('dci') != -1:             #if tagged as dc current
-            dci.append(taggedData[1])                   #add data to dc durrent
+            dci.append(3.3*(float(taggedData[1])/totalBits))#add data to dc durrent
         if taggedData[0].find('end') != -1:             #if end tag is found
             break                                       #exit loop
     return dcv, dci                                     #return dc voltage and current
@@ -30,7 +31,7 @@ print('listening')
 clientSocket, address = sock.accept()                   #form connection when esp joins
 print("Connection established")
 while True:                                             #while active
-    for i in range(30):                                 #sleep for 30 seconds
+    for i in range(8):                                 #sleep for 30 seconds
         sleep(1)    
         print('sleep time: '+str(i))
     data = 'meas'                                       #create measurement query string
@@ -39,10 +40,10 @@ while True:                                             #while active
     dataLen = len(recvData)                             #find length of response
     parsedData = dataParser(recvData.decode('utf-8'))   #decode and parse data
     for i in range(len(parsedData[0])):                 #break parsed data into new arrays
-        dcv_points.append(i)
+        dcv_points.append(float(i))
         print(parsedData[0][i])
     for i in range(len(parsedData[1])):
-        dci_points.append(i)
+        dci_points.append(float(i))
         print(parsedData[1][i])
     #plotter.plot(dcv_points,parsedData[0], label = 'dcv')
     #plotter.plot(dci_points,parsedData[1], label = 'dci')
