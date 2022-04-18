@@ -1,7 +1,7 @@
 #main.py
 #sends ADC data over TCP connection to server
 #Writen by: Nick Moser
-#Last edited: April 17, 2022
+#Last edited: April 18, 2022
 
 from machine import UART, Pin
 import utime
@@ -133,6 +133,7 @@ def espTCPWrite(espDevice,data,dataLen):
 
 #PROGRAM STARTS HERE
 
+machine.freq(250000000)
 #Create UART object for ESP device
 espDevice = UART(0, baudrate=115200, tx=Pin(0), rx = Pin(1), timeout = 2)
 #setup information for ADC
@@ -159,6 +160,8 @@ if espSetup(espDevice,led) != 1:
 if espTCPSetup(espDevice) != 1:
     print("TCP connection failed")
     sys.exit()
+    
+machine.freq(16000000)
 
 while True:
     #if nothing has been queried from tcp connection
@@ -169,12 +172,15 @@ while True:
         espResponse = str(espDevice.readline())
         #if tcp connection wants a measurement
         if espResponse.find('meas') != -1:
+            utime.sleep(0.25)
+            machine.freq(250000000)
+            utime.sleep(0.25)
             #while buffer has less than 2kb of data
             while sentBytes < 2024:
                 #collect ADC measurements from both channels
                 #keep track of data in buffer
                 for i in range(len(adc)):
-                    adcReading = round((3.3*((adc[i].read_u16() >> 4)/(2**12))),4)
+                    adcReading = round((adc[i].read_u16() >> 4),4)
                     tagData = adc_tags[i]+'?'+str(adcReading)+';'
                     dataSend+=str(tagData)
                     sentBytes += len(tagData)
@@ -187,3 +193,5 @@ while True:
             #reset buffer and bytes in buffer
             dataSend = '' 
             sentBytes = 0
+            machine.freq(16000000)
+            utime.sleep(1)
